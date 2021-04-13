@@ -10,6 +10,7 @@ import java.util.function.UnaryOperator;
 
 public class MyTools {
     private final static int win = Integer.MAX_VALUE;
+
     private final static int fourWinnable = 100000;
     private final static int fourBlocked = 1000;
     private final static int threeWinnable = 10000;
@@ -73,7 +74,7 @@ public class MyTools {
         return score;
     }
 
-    public static ArrayList<String> getDiagonals(int[][] array) {
+    private static ArrayList<String> getDiagonals(int[][] array) {
         int length = array.length;
         ArrayList<String> ret = new ArrayList<String>(22);
 
@@ -120,7 +121,7 @@ public class MyTools {
         return ret;
     }
 
-    public static ArrayList<String> getRows(int[][] array) {
+    private static ArrayList<String> getRows(int[][] array) {
         ArrayList<String> ret = new ArrayList<String>(6);
         String tmp = "";
         for (int i = 0; i < 6; i++) {
@@ -133,7 +134,7 @@ public class MyTools {
         return ret;
     }
 
-    public static ArrayList<String> getColumns(int[][] array) {
+    private static ArrayList<String> getColumns(int[][] array) {
         ArrayList<String> ret = new ArrayList<String>(6);
         String tmp = "";
         for (int i = 0; i < 6; i++) {
@@ -146,6 +147,75 @@ public class MyTools {
         return ret;
     }
 
+    private static int evaluateRow(ArrayList<String> rows) {
+        int score = 0;
+        for (String row : rows) {
+            String[] splitRow = row.split("2");
+
+            for (String consecutiveBlock : splitRow) {
+                boolean winnable = false;
+                if (consecutiveBlock.length() >= 5) {
+                    winnable = true;
+                }
+
+                for (String consecutivePieces : consecutiveBlock.split("0")) {
+                    score += getEval(winnable, consecutivePieces.length());
+                }
+            }
+        }
+        return score;
+    }
+
+    private static int getEval(boolean winnable, int consecutivePieces) {
+        if (winnable) {
+            if (consecutivePieces >= 5) {
+                System.out.println("Five Winnable");
+                return win;
+            } else if (consecutivePieces == 4) {
+                System.out.println("Four Winnable");
+                return fourWinnable;
+            } else if (consecutivePieces == 3) {
+                System.out.println("Three Winnable");
+                return threeWinnable;
+            } else if (consecutivePieces == 2) {
+                System.out.println("Two Winnable");
+                return twoWinnable;
+            } else {
+                return 0;
+            }
+        } else {
+            if (consecutivePieces >= 5) {
+                System.out.println("Five Blocked");
+                return win;
+            } else if (consecutivePieces == 4) {
+                System.out.println("Four Blocked");
+                return fourBlocked;
+            } else if (consecutivePieces == 3) {
+                System.out.println("Three Blocked");
+                return threeBlocked;
+            } else if (consecutivePieces == 2) {
+                System.out.println("Two Blocked");
+                return twoBlocked;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    private static int evaluateNEW(int[][] int_board) {
+        ArrayList<String> diags = getDiagonals(int_board);
+        ArrayList<String> rows = getRows(int_board);
+        ArrayList<String> cols = getColumns(int_board);
+        int score = 0;
+        System.out.println("DIAGONAL");
+        score += evaluateRow(diags);
+        System.out.println("ROWS");
+        score += evaluateRow(rows);
+        System.out.println("COLS");
+        score += evaluateRow(cols);
+        return score;
+    }
+
     public static void main(String[] args) {
         Piece[][] boarding = { { Piece.WHITE, Piece.EMPTY, Piece.WHITE, Piece.WHITE, Piece.BLACK, Piece.EMPTY },
                 { Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.EMPTY },
@@ -154,29 +224,14 @@ public class MyTools {
                 { Piece.BLACK, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.WHITE, Piece.BLACK },
                 { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.BLACK, Piece.EMPTY, Piece.EMPTY }, };
 
-        int[][] int_board = { { 1, 0, 1, 1, 2, 0 }, { 2, 1, 2, 1, 2, 0 }, { 1, 0, 1, 1, 0, 2 }, { 0, 2, 1, 2, 0, 0 },
-                { 2, 0, 0, 0, 1, 2 }, { 0, 0, 0, 2, 0, 0 }, };
+        int[][] int_board = { 
+            { 2, 1, 1, 1, 0, 0 }, 
+            { 0, 2, 1, 1, 0, 0 }, 
+            { 2, 0, 1, 1, 0, 0 }, 
+            { 0, 0, 1, 0, 0, 0 },
+            { 0, 1, 0, 0, 2, 0 }, 
+            { 0, 0, 0, 0, 0, 0 }, };
 
-        String[] expected = { "20", "111", "0021", "22112", "001120", "00200", "0002", "210", "02", "20", "000", "1202",
-                "20100", "111210", "02102", "1100", "122", "20" };
-        System.out.println(Arrays.toString(expected));
-        ArrayList<String> diags = getDiagonals(int_board);
-        System.out.println(diags.toString());
-
-        // ArrayList<String> rows = getRows(int_board);
-        // System.out.println(rows.toString());
-        // ArrayList<String> cols = getColumns(int_board);
-        // System.out.println(cols.toString());
-
-        // System.out.println("SIZE "+list.size());
-        // for (String s : list){
-        // System.out.println(s);
-        // }
-
-        // String a = "1-110-10";
-        // String[] arr = a.split("-1");
-
-        // System.out.println(Arrays.toString(arr));
-        // evaluate(board);
+        evaluateNEW(int_board);
     }
 }
