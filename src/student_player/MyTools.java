@@ -78,7 +78,7 @@ public class MyTools {
         ArrayList<String> ret = new ArrayList<String>(22);
 
         String tmp = "";
-        for (int k = 0; k < length; k++) {
+        for (int k = 1; k < length; k++) {
             for (int j = 0; j <= k; j++) {
                 int i = k - j;
                 tmp += array[i][j];
@@ -88,7 +88,7 @@ public class MyTools {
         }
 
         tmp = "";
-        for (int k = length - 2; k >= 0; k--) {
+        for (int k = length - 2; k > 0; k--) {
             for (int j = 0; j <= k; j++) {
                 int i = k - j;
                 tmp += array[length - j - 1][length - i - 1];
@@ -100,15 +100,16 @@ public class MyTools {
         // right diagonals top half
         tmp = "";
         for (int i = length - 1; i > 0; i--) {
-            for (int j = 0, x = i; x < length; j++, x++) {
+            for (int j = 0, x = i - 1; x < length; j++, x++) {
                 tmp += array[x][j];
             }
-            ret.add(tmp);
+            if (tmp != "")
+                ret.add(tmp);
             tmp = "";
         }
 
         tmp = "";
-        for (int i = 0; i < length; i++) {
+        for (int i = 1; i < length - 1; i++) {
             for (int j = 0, y = i; y < length; j++, y++) {
                 tmp += array[j][y];
             }
@@ -127,7 +128,7 @@ public class MyTools {
                 tmp += array[i][j];
             }
             ret.add(tmp);
-            tmp="";
+            tmp = "";
         }
         return ret;
     }
@@ -140,7 +141,7 @@ public class MyTools {
                 tmp += array[j][i];
             }
             ret.add(tmp);
-            tmp="";
+            tmp = "";
         }
         return ret;
     }
@@ -153,15 +154,11 @@ public class MyTools {
                 { Piece.BLACK, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.WHITE, Piece.BLACK },
                 { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.BLACK, Piece.EMPTY, Piece.EMPTY }, };
 
-        int[][] int_board = { 
-            { 1, 0, 1, 1, 2, 0 }, 
-            { 2, 1, 2, 1, 2, 0 }, 
-            { 1, 0, 1, 1, 0, 2 }, 
-            { 0, 2, 1, 2, 0, 0 },
-            { 2, 0, 0, 0, 1, 2 }, 
-            { 0, 0, 0, 2, 0, 0 }, };
-            
-        String[] expected = {"20", "111", "0021", "22112", "001120", "00200", "0002", "210", "02", "20", "000", "1202", "20100", "111210", "02102", "1100", "122", "20"};
+        int[][] int_board = { { 1, 0, 1, 1, 2, 0 }, { 2, 1, 2, 1, 2, 0 }, { 1, 0, 1, 1, 0, 2 }, { 0, 2, 1, 2, 0, 0 },
+                { 2, 0, 0, 0, 1, 2 }, { 0, 0, 0, 2, 0, 0 }, };
+
+        String[] expected = { "20", "111", "0021", "22112", "001120", "00200", "0002", "210", "02", "20", "000", "1202",
+                "20100", "111210", "02102", "1100", "122", "20" };
         System.out.println(Arrays.toString(expected));
         ArrayList<String> diags = getDiagonals(int_board);
         System.out.println(diags.toString());
