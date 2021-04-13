@@ -1,82 +1,140 @@
 package student_player;
 
-import boardgame.Board;
 import pentago_twist.PentagoBoardState;
-import pentago_twist.PentagoMove;
-import java.util.List;
+import pentago_twist.PentagoBoardState.Piece;
+import pentago_twist.PentagoCoord;
+import java.util.function.UnaryOperator;
 
 public class MyTools {
-    public final static int winVal = Integer.MAX_VALUE;
-    public final static int lostVal = Integer.MIN_VALUE;
-    public final static int fourInRow = 1000;
-    public final static int threeInRowSameBlock = 200;
-    public final static int threeInRow = 100;
-    public final static int pieceInCenter = 5;
+    private final static int win = Integer.MAX_VALUE;
+    private final static int fourWinnable = 10000;
+    private final static int fourBlocked = 100;
+    private final static int threeWinnable = 1000;
+    private final static int threeBlocked = 10;
 
-    final class MyResult {
-        private final PentagoMove bestMove;
-        private final int alphaOrBeta;
+    private static Piece[][] board;
+    private static final UnaryOperator<PentagoCoord> getNextHorizontal = c -> new PentagoCoord(c.getX(), c.getY() + 1);
+    private static final UnaryOperator<PentagoCoord> getNextVertical = c -> new PentagoCoord(c.getX() + 1, c.getY());
+    private static final UnaryOperator<PentagoCoord> getNextDiagRight = c -> new PentagoCoord(c.getX() + 1,
+            c.getY() + 1);
+    private static final UnaryOperator<PentagoCoord> getNextDiagLeft = c -> new PentagoCoord(c.getX() + 1,
+            c.getY() - 1);
 
-        public MyResult(PentagoMove bestMove, int alphaOrBeta) {
-            this.bestMove = bestMove;
-            this.alphaOrBeta = alphaOrBeta;
+    private static int checkConsecutivePiecesRange(int player, int xStart, int xEnd, int yStart, int yEnd,
+            UnaryOperator<PentagoCoord> direction) {
+        int score = 0;
+        for (int i = xStart; i < xEnd; i++) {
+            for (int j = yStart; j < yEnd; ) {
+                // score += checkConsecutivePieces(player, new PentagoCoord(i, j), direction);
+                int ret = checkConsecutivePieces(player, new PentagoCoord(i, j), direction);
+                if (ret == win) {
+                    j += 5;
+                }
+                else if (ret == fourBlocked || ret == fourWinnable) {
+                    j += 4;
+                }
+                else if (ret == threeBlocked || ret == threeWinnable) {
+                    j += 3;
+                }
+                else{
+                    j++;
+                }
+                score += ret;
+            }
         }
-
-        public PentagoMove getBestMove() {
-            return bestMove;
-        }
-
-        public int getAlphaOrBeta() {
-            return alphaOrBeta;
-        }
+        return score;
     }
 
-    public static double getSomething() {
-        return Math.random();
-    }
-
-    public static MyResult minimax(int myPlayer, PentagoBoardState boardState, int depth, boolean maximizingPlayer, int alpha, int beta) {
-        if (boardState.gameOver() || depth == 0) {
-            // evaluate(boardState);
+    private static int checkConsecutivePieces(int player, PentagoCoord start, UnaryOperator<PentagoCoord> direction) {
+        int consecutivePiecesCounter = 0;
+        int winnableCounter = 0;
+        Piece currColour = player == 0 ? Piece.WHITE : Piece.BLACK;
+        PentagoCoord current = start;
+        while (true) {
+            try {
+                if (currColour == board[current.getX()][current.getY()]) {
+                    consecutivePiecesCounter++;
+                    winnableCounter++;
+                    current = direction.apply(current);
+                }
+                // else, test to see if pieces are empty
+                else if (Piece.EMPTY == board[current.getX()][current.getY()]) {
+                    winnableCounter++; // used to test if current row/col/diagonal is blocked or not
+                    current = direction.apply(current);
+                }
+                // we have an opponent piece
+                else {
+                    break;
+                }
+            } catch (IllegalArgumentException e) { // We have run off the board
+                break;
+            }
         }
 
-        List<PentagoMove> moves = boardState.getAllLegalMoves();
-        PentagoMove bestMove;
-        PentagoBoardState boardClone;
-
-        int curEval;
-
-        if (maximizingPlayer) {
-            int maxEval = Integer.MIN_VALUE;
-            for (PentagoMove move : moves) {
-                boardClone = (PentagoBoardState) boardState.clone();
-                boardClone.processMove(move);
-                curEval = minimax(myPlayer, boardClone, depth - 1, false, alpha, beta);
-
-                if (curEval > maxEval){
-                    maxEval = curEval;
-                    bestMove = move;
-                }
-                alpha = Math.max(alpha, curEval);
-                if (beta<=alpha)
-                break;
+        boolean notBlocked = winnableCounter >= 5;
+        if (consecutivePiecesCounter >= 5) {
+            // System.out.println("5 in a row");
+            return win;
+        } else if (consecutivePiecesCounter == 4) {
+            if (notBlocked) {
+                // System.out.println("4 in a row winnable");
+                return fourWinnable;
+            } else {
+                // System.out.println("4 in a row blocked");
+                return fourBlocked;
             }
-            return new myResult(bestMove, maxEval);
-        } else {
-            int minEval = Integer.MAX_VALUE;
-            for (PentagoMove move : moves) {
-                boardClone = (PentagoBoardState) boardState.clone();
-                boardClone.processMove(move);
-                curEval = minimax(myPlayer, boardClone, depth - 1, true, alpha, beta);
-
-                if (curEval < minEval){
-                    minEval = curEval;
-                    bestMove = move;
-                }
-                beta = Math.min(beta, curEval);
-                if (beta<=alpha)
-                break;
+        } else if (consecutivePiecesCounter == 3) {
+            if (notBlocked) {
+                // System.out.println("3 in a row winnable");
+                return threeWinnable;
+            } else {
+                // System.out.println("3 in a row blocked");
+                return threeBlocked;
             }
-            return new myResult(bestMove, minEval);
+        }
+        return 0;
+    }
+
+    private static int checkVerticalWin(int player) {
+        return checkConsecutivePiecesRange(player, 0, 2, 0, PentagoBoardState.BOARD_SIZE, getNextVertical);
+    }
+
+    private static int checkHorizontalWin(int player) {
+        return checkConsecutivePiecesRange(player, 0, PentagoBoardState.BOARD_SIZE, 0, 2, getNextHorizontal);
+    }
+
+    private static int checkDiagRightWin(int player) {
+        return checkConsecutivePiecesRange(player, 0, 2, 0, 2, getNextDiagRight);
+    }
+
+    private static int checkDiagLeftWin(int player) {
+        return checkConsecutivePiecesRange(player, 0, 2, PentagoBoardState.BOARD_SIZE - 2, PentagoBoardState.BOARD_SIZE,
+                getNextDiagLeft);
+    }
+
+    public static int evaluate(PentagoBoardState boardState) {
+        int turnPlayer = boardState.getTurnPlayer();
+        board = boardState.getBoard();
+
+        // test all rows, colums,
+        int score = 0;
+        score += checkVerticalWin(turnPlayer);
+        score += checkHorizontalWin(turnPlayer);
+        score += checkDiagRightWin(turnPlayer);
+        score += checkDiagLeftWin(turnPlayer);
+        // System.out.println("evaluation player " + turnPlayer + " : " + score);
+        return score;
+    }
+
+    public static void main(String[] args) {
+        Piece[][] boarding = { 
+                { Piece.WHITE, Piece.WHITE, Piece.WHITE, Piece.WHITE, Piece.BLACK, Piece.EMPTY },
+                { Piece.WHITE, Piece.WHITE, Piece.WHITE, Piece.WHITE, Piece.EMPTY, Piece.EMPTY },
+                { Piece.EMPTY, Piece.EMPTY, Piece.WHITE, Piece.WHITE, Piece.EMPTY, Piece.EMPTY },
+                { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.BLACK, Piece.EMPTY, Piece.EMPTY },
+                { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY },
+                { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY }, };
+        board = boarding;
+        // evaluate(board);
     }
 }
