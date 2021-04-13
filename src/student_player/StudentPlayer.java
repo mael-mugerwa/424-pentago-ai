@@ -14,7 +14,6 @@ public class StudentPlayer extends PentagoPlayer {
     public static int myPlayer;
     public static long startTime, endTime;
     public static boolean cutoff;
-    public static PentagoMove randomMove;
     public static HashMap<PentagoBoardState, Result> hashMap;
     // useless just to count hash hit
     public static int c;
@@ -43,12 +42,15 @@ public class StudentPlayer extends PentagoPlayer {
         endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 500
                 : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 500;
         cutoff = false;
-        randomMove = (PentagoMove) boardState.getRandomMove();
         hashMap = new HashMap<PentagoBoardState, Result>();
 
+        PentagoMove randomMove = (PentagoMove) boardState.getRandomMove();
+        // start with random result
         Result bestResult = new Result(randomMove, 0);
+        
+        // incremental depth minimax
         int depth = 1;
-        while (true) {
+        while (depth <= 5) {
             c = 0;
             Result res = minimax(boardState, depth, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
             if (res.getScore() > bestResult.getScore())
@@ -99,10 +101,7 @@ public class StudentPlayer extends PentagoPlayer {
         }
 
         List<PentagoMove> moves = boardState.getAllLegalMoves();
-        PentagoMove bestMove = randomMove;
-        PentagoBoardState boardClone = (PentagoBoardState) boardState.clone();
-
-        int curEval;
+        PentagoMove bestMove = moves.get(0);
 
         if (maximizingPlayer) {
             int maxEval = Integer.MIN_VALUE;
@@ -112,21 +111,20 @@ public class StudentPlayer extends PentagoPlayer {
                     break;
                 }
 
-                boardClone = (PentagoBoardState) boardState.clone();
+                PentagoBoardState boardClone = (PentagoBoardState) boardState.clone();
                 boardClone.processMove(move);
-                Result tmp = minimax(boardClone, depth - 1, false, alpha, beta);
-                curEval = tmp.getScore();
+                Result curEval = minimax(boardClone, depth - 1, false, alpha, beta);
 
-                if (curEval > maxEval) {
-                    maxEval = curEval;
+                if (curEval.getScore() > maxEval) {
+                    maxEval = curEval.getScore();
                     bestMove = move;
                 }
-                alpha = Math.max(alpha, curEval);
+                alpha = Math.max(alpha, curEval.getScore());
                 if (beta <= alpha)
                     break;
             }
             Result res = new Result(bestMove, maxEval);
-            hashMap.put(boardClone, res);
+            hashMap.put(boardState, res);
             return res;
         } else {
             int minEval = Integer.MAX_VALUE;
@@ -136,21 +134,20 @@ public class StudentPlayer extends PentagoPlayer {
                     break;
                 }
 
-                boardClone = (PentagoBoardState) boardState.clone();
+                PentagoBoardState boardClone = (PentagoBoardState) boardState.clone();
                 boardClone.processMove(move);
-                Result tmp = minimax(boardClone, depth - 1, true, alpha, beta);
-                curEval = tmp.getScore();
+                Result curEval = minimax(boardClone, depth - 1, true, alpha, beta);
 
-                if (curEval < minEval) {
-                    minEval = curEval;
+                if (curEval.getScore() < minEval) {
+                    minEval = curEval.getScore();
                     bestMove = move;
                 }
-                beta = Math.min(beta, curEval);
+                beta = Math.min(beta, curEval.getScore());
                 if (beta <= alpha)
                     break;
             }
             Result res = new Result(bestMove, minEval);
-            hashMap.put(boardClone, res);
+            hashMap.put(boardState, res);
             return res;
         }
     }

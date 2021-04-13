@@ -24,9 +24,9 @@ public class MyTools {
     // private final static int twoBlocked = 1;
     // private final static int centerQuadrant = 20;
 
-    // variables for the piece that corresponds to turnPlayer and his opponent
-    // if turnPlayer is white, turnPlayerPiece = 1 for example
-    private static int turnPlayerPiece = 0;
+    // variables for the piece that corresponds to myPlayer and his opponent
+    // if myPlayer is white, myPlayerPiece = 1 for example
+    private static int myPlayerPiece = 0;
     private static int opponentPlayerPiece = 0;
 
     // variable to indicate at what point to stop evaluation
@@ -51,19 +51,19 @@ public class MyTools {
         return board;
     }
 
-    // check whether turnPlayer's pieces are in the center of each quadrant
+    // check whether myPlayer's pieces are in the center of each quadrant
     private static int checkCenterQuandrant(int[][] board) {
         int score = 0;
-        if (turnPlayerPiece == board[1][1])
+        if (myPlayerPiece == board[1][1])
             score += centerQuadrant;
 
-        if (turnPlayerPiece == board[1][4])
+        if (myPlayerPiece == board[1][4])
             score += centerQuadrant;
 
-        if (turnPlayerPiece == board[4][1])
+        if (myPlayerPiece == board[4][1])
             score += centerQuadrant;
 
-        if (turnPlayerPiece == board[4][4])
+        if (myPlayerPiece == board[4][4])
             score += centerQuadrant;
         return score;
     }
@@ -145,7 +145,7 @@ public class MyTools {
     }
 
     // evaluates all the rows of the list by splitting them into strings with only
-    // turnPlayer's pieces
+    // myPlayer's pieces
     // (can also be used to evaluate diagonals and columns )
     private static int evaluateRow(ArrayList<String> rows) {
         int score = 0;
@@ -203,13 +203,11 @@ public class MyTools {
         }
     }
 
-    // evaluation function, returns total eval of the board based on turnPlayer
+    // evaluation function, returns total eval of the board based on myPlayer
     public static int evaluate(PentagoBoardState boardState) {
-        int turnPlayer = boardState.getTurnPlayer();
-
-        // get piece number for turnPlayer
-        turnPlayerPiece = turnPlayer == 0 ? 1 : 2;
-        opponentPlayerPiece = turnPlayerPiece == 1 ? 2 : 1;
+        // get piece number for myPlayer
+        myPlayerPiece = StudentPlayer.myPlayer == 0 ? 1 : 2;
+        opponentPlayerPiece = myPlayerPiece == 1 ? 2 : 1;
 
         int[][] board = getBoard(boardState);
 
@@ -224,13 +222,13 @@ public class MyTools {
         score += checkCenterQuandrant(board);
 
         // switch player pieces to test opponent's position
-        int tmp = turnPlayerPiece;
-        turnPlayerPiece = opponentPlayerPiece;
+        int tmp = myPlayerPiece;
+        myPlayerPiece = opponentPlayerPiece;
         opponentPlayerPiece = tmp;
 
         // stop opponent eval at 5 as to only remove situations where opponent wins
         stopAt = 5;
-        // subtract opponent's score from turnPlayer's turn
+        // subtract opponent's score from myPlayer's turn
         score -= evaluateRow(diags);
         score -= evaluateRow(rows);
         score -= evaluateRow(cols);
