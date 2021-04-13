@@ -13,7 +13,6 @@ public class MyTools {
     private final static int threeBlocked = 100;
     private final static int twoWinnable = 5;
     private final static int twoBlocked = 1;
-    private final static int blocked = 0;
     private final static int centerQuadrant = 20;
 
     private static Piece[][] board;
