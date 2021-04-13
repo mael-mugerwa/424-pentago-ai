@@ -9,16 +9,29 @@ public class MyTools {
 
     // evaluation for each position
     private final static int win = Integer.MAX_VALUE;
-    private final static int fourWinnable = 100000;
-    private final static int fourBlocked = 1000;
-    private final static int threeWinnable = 10000;
-    private final static int threeBlocked = 100;
-    private final static int twoWinnable = 5;
-    private final static int twoBlocked = 1;
-    private final static int centerQuadrant = 20;
+    private final static int fourWinnable = 10000;
+    private final static int fourBlocked = 0;
+    private final static int threeWinnable = 1000;
+    private final static int threeBlocked = 0;
+    private final static int twoWinnable = 1;
+    private final static int twoBlocked = 0;
+    private final static int centerQuadrant = 5;
+    // private final static int fourWinnable = 100000;
+    // private final static int fourBlocked = 1000;
+    // private final static int threeWinnable = 10000;
+    // private final static int threeBlocked = 100;
+    // private final static int twoWinnable = 5;
+    // private final static int twoBlocked = 1;
+    // private final static int centerQuadrant = 20;
 
+    // variables for the piece that corresponds to turnPlayer and his opponent
+    // if turnPlayer is white, turnPlayerPiece = 1 for example
     private static int turnPlayerPiece = 0;
     private static int opponentPlayerPiece = 0;
+
+    // variable to indicate at what point to stop evaluation
+    // (if I only want to evaluate wins, I set stopAt = 5; for 4 in a row, set to 4)
+    private static int stopAt = 0;
 
     // make an int[][] board based on boardState (white = 1, black = 2, empty = 0)
     private static int[][] getBoard(PentagoBoardState boardState) {
@@ -164,13 +177,13 @@ public class MyTools {
     // how many consecutive pieces there are
     private static int getEval(boolean winnable, int consecutivePieces) {
         if (winnable) {
-            if (consecutivePieces >= 5) {
+            if (consecutivePieces >= 5 && stopAt <= 5) {
                 return win;
-            } else if (consecutivePieces == 4) {
+            } else if (consecutivePieces == 4 && stopAt <= 4) {
                 return fourWinnable;
-            } else if (consecutivePieces == 3) {
+            } else if (consecutivePieces == 3 && stopAt <= 3) {
                 return threeWinnable;
-            } else if (consecutivePieces == 2) {
+            } else if (consecutivePieces == 2 && stopAt <= 2) {
                 return twoWinnable;
             } else {
                 return 0;
@@ -192,8 +205,6 @@ public class MyTools {
 
     // evaluation function, returns total eval of the board based on turnPlayer
     public static int evaluate(PentagoBoardState boardState) {
-        long startTime = System.currentTimeMillis();
-
         int turnPlayer = boardState.getTurnPlayer();
 
         // get piece number for turnPlayer
@@ -206,6 +217,7 @@ public class MyTools {
         ArrayList<String> rows = getRows(board);
         ArrayList<String> cols = getColumns(board);
         int score = 0;
+        stopAt = 2;
         score += evaluateRow(diags);
         score += evaluateRow(rows);
         score += evaluateRow(cols);
@@ -216,14 +228,14 @@ public class MyTools {
         turnPlayerPiece = opponentPlayerPiece;
         opponentPlayerPiece = tmp;
 
+        // stop opponent eval at 5 as to only remove situations where opponent wins
+        stopAt = 5;
         // subtract opponent's score from turnPlayer's turn
         score -= evaluateRow(diags);
         score -= evaluateRow(rows);
         score -= evaluateRow(cols);
         score -= checkCenterQuandrant(board);
 
-        long endTime = System.currentTimeMillis();
-        System.out.println("Eval took " + (endTime - startTime));
         return score;
     }
 
