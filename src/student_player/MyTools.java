@@ -2,15 +2,13 @@ package student_player;
 
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoBoardState.Piece;
-import pentago_twist.PentagoCoord;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.function.UnaryOperator;
 
 public class MyTools {
-    private final static int win = Integer.MAX_VALUE;
 
+    // evaluation for each position
+    private final static int win = Integer.MAX_VALUE;
     private final static int fourWinnable = 100000;
     private final static int fourBlocked = 1000;
     private final static int threeWinnable = 10000;
@@ -19,61 +17,45 @@ public class MyTools {
     private final static int twoBlocked = 1;
     private final static int centerQuadrant = 20;
 
-    private static int[][] board;
+    private static int turnPlayerPiece = 0;
+    private static int opponentPlayerPiece = 0;
 
-    private static int checkCenterQuandrant(int player) {
-        int currColour = player == 0 ? 1 : 2;
+    // make an int[][] board based on boardState (white = 1, black = 2, empty = 0)
+    private static int[][] getBoard(PentagoBoardState boardState) {
+        int[][] board = new int[6][6];
+        for (int j = 0; j < 6; j++) {
+            for (int k = 0; k < 6; k++) {
+                Piece p = boardState.getPieceAt(j, k);
+                if (p == Piece.EMPTY) {
+                    board[j][k] = 0;
+                } else if (p == Piece.WHITE) {
+                    board[j][k] = 1;
+                } else {
+                    board[j][k] = 2;
+                }
+            }
+        }
+        return board;
+    }
+
+    // check whether turnPlayer's pieces are in the center of each quadrant
+    private static int checkCenterQuandrant(int[][] board) {
         int score = 0;
-        if (currColour == board[1][1])
+        if (turnPlayerPiece == board[1][1])
             score += centerQuadrant;
 
-        if (currColour == board[1][4])
+        if (turnPlayerPiece == board[1][4])
             score += centerQuadrant;
 
-        if (currColour == board[4][1])
+        if (turnPlayerPiece == board[4][1])
             score += centerQuadrant;
 
-        if (currColour == board[4][4])
+        if (turnPlayerPiece == board[4][4])
             score += centerQuadrant;
-
-        System.out.println("num of quadrants " + (score / centerQuadrant));
         return score;
     }
 
-    // public static int evaluate(PentagoBoardState boardState) {
-    public static int evaluate(Piece[][] boardState) {
-        // long startTime = System.currentTimeMillis();
-
-        // int turnPlayer = boardState.getTurnPlayer();
-        // board = boardState.getBoard();
-        int turnPlayer = 0;
-
-        // test all rows, colums,
-        int score = 0;
-        System.out.println("VERTICAL");
-        score += checkVerticalWin(turnPlayer, 2);
-        System.out.println("HORIZONTAL");
-        score += checkHorizontalWin(turnPlayer, 2);
-        System.out.println("R DIAGONAL");
-        score += checkDiagRightWin(turnPlayer, 2);
-        System.out.println("L DIAGONAL");
-        score += checkDiagLeftWin(turnPlayer, 2);
-        System.out.println("QUADRANTS");
-        score += checkCenterQuandrant(turnPlayer);
-
-        int opponent = 1 - turnPlayer;
-        System.out.println("OPPONENT");
-        score -= checkVerticalWin(opponent, 5);
-        score -= checkHorizontalWin(opponent, 5);
-        score -= checkDiagRightWin(opponent, 5);
-        score -= checkDiagLeftWin(opponent, 5);
-
-        // long endTime = System.currentTimeMillis();
-        // System.out.println("evaluation took " + (endTime-startTime));
-        System.out.println("evaluation score " + score);
-        return score;
-    }
-
+    // return all diagonals of length >= 2 as strings in an arraylist
     private static ArrayList<String> getDiagonals(int[][] array) {
         int length = array.length;
         ArrayList<String> ret = new ArrayList<String>(22);
@@ -121,6 +103,7 @@ public class MyTools {
         return ret;
     }
 
+    // return all rows of the board as strings in an arraylist
     private static ArrayList<String> getRows(int[][] array) {
         ArrayList<String> ret = new ArrayList<String>(6);
         String tmp = "";
@@ -134,6 +117,7 @@ public class MyTools {
         return ret;
     }
 
+    // return all columns of the board as strings in an arraylist
     private static ArrayList<String> getColumns(int[][] array) {
         ArrayList<String> ret = new ArrayList<String>(6);
         String tmp = "";
@@ -147,18 +131,28 @@ public class MyTools {
         return ret;
     }
 
+    // evaluates all the rows of the list by splitting them into strings with only
+    // turnPlayer's pieces
+    // (can also be used to evaluate diagonals and columns )
     private static int evaluateRow(ArrayList<String> rows) {
         int score = 0;
+        // for each row
         for (String row : rows) {
-            String[] splitRow = row.split("2");
+            // split the row by the opponent's piece
+            String[] splitRow = row.split(String.valueOf(opponentPlayerPiece));
 
+            // for each split block of the row
             for (String consecutiveBlock : splitRow) {
                 boolean winnable = false;
+                // we can still win on that block if it has enough empty pieces
                 if (consecutiveBlock.length() >= 5) {
                     winnable = true;
                 }
 
+                // for each split block, split in consecutives pieces of current player by
+                // removing empty pieces
                 for (String consecutivePieces : consecutiveBlock.split("0")) {
+                    // based on number of consecutive pieces, return eval
                     score += getEval(winnable, consecutivePieces.length());
                 }
             }
@@ -166,35 +160,29 @@ public class MyTools {
         return score;
     }
 
+    // return the correct evaluation based on if a consecutive block is blocked and
+    // how many consecutive pieces there are
     private static int getEval(boolean winnable, int consecutivePieces) {
         if (winnable) {
             if (consecutivePieces >= 5) {
-                System.out.println("Five Winnable");
                 return win;
             } else if (consecutivePieces == 4) {
-                System.out.println("Four Winnable");
                 return fourWinnable;
             } else if (consecutivePieces == 3) {
-                System.out.println("Three Winnable");
                 return threeWinnable;
             } else if (consecutivePieces == 2) {
-                System.out.println("Two Winnable");
                 return twoWinnable;
             } else {
                 return 0;
             }
         } else {
             if (consecutivePieces >= 5) {
-                System.out.println("Five Blocked");
                 return win;
             } else if (consecutivePieces == 4) {
-                System.out.println("Four Blocked");
                 return fourBlocked;
             } else if (consecutivePieces == 3) {
-                System.out.println("Three Blocked");
                 return threeBlocked;
             } else if (consecutivePieces == 2) {
-                System.out.println("Two Blocked");
                 return twoBlocked;
             } else {
                 return 0;
@@ -202,36 +190,53 @@ public class MyTools {
         }
     }
 
-    private static int evaluateNEW(int[][] int_board) {
-        ArrayList<String> diags = getDiagonals(int_board);
-        ArrayList<String> rows = getRows(int_board);
-        ArrayList<String> cols = getColumns(int_board);
+    // evaluation function, returns total eval of the board based on turnPlayer
+    public static int evaluate(PentagoBoardState boardState) {
+        long startTime = System.currentTimeMillis();
+
+        int turnPlayer = boardState.getTurnPlayer();
+
+        // get piece number for turnPlayer
+        turnPlayerPiece = turnPlayer == 0 ? 1 : 2;
+        opponentPlayerPiece = turnPlayerPiece == 1 ? 2 : 1;
+
+        int[][] board = getBoard(boardState);
+
+        ArrayList<String> diags = getDiagonals(board);
+        ArrayList<String> rows = getRows(board);
+        ArrayList<String> cols = getColumns(board);
         int score = 0;
-        System.out.println("DIAGONAL");
         score += evaluateRow(diags);
-        System.out.println("ROWS");
         score += evaluateRow(rows);
-        System.out.println("COLS");
         score += evaluateRow(cols);
+        score += checkCenterQuandrant(board);
+
+        // switch player pieces to test opponent's position
+        int tmp = turnPlayerPiece;
+        turnPlayerPiece = opponentPlayerPiece;
+        opponentPlayerPiece = tmp;
+
+        // subtract opponent's score from turnPlayer's turn
+        score -= evaluateRow(diags);
+        score -= evaluateRow(rows);
+        score -= evaluateRow(cols);
+        score -= checkCenterQuandrant(board);
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("Eval took " + (endTime - startTime));
         return score;
     }
 
     public static void main(String[] args) {
-        Piece[][] boarding = { { Piece.WHITE, Piece.EMPTY, Piece.WHITE, Piece.WHITE, Piece.BLACK, Piece.EMPTY },
-                { Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.EMPTY },
-                { Piece.WHITE, Piece.EMPTY, Piece.WHITE, Piece.WHITE, Piece.EMPTY, Piece.BLACK },
-                { Piece.EMPTY, Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.EMPTY, Piece.EMPTY },
-                { Piece.BLACK, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.WHITE, Piece.BLACK },
-                { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.BLACK, Piece.EMPTY, Piece.EMPTY }, };
+        // test eval
+        // int[][] int_board = {
+        // { 2, 1, 1, 1, 0, 0 },
+        // { 0, 2, 1, 1, 0, 0 },
+        // { 2, 0, 1, 1, 0, 0 },
+        // { 0, 0, 1, 0, 0, 0 },
+        // { 0, 1, 0, 0, 2, 0 },
+        // { 0, 0, 0, 0, 0, 0 }, };
 
-        int[][] int_board = { 
-            { 2, 1, 1, 1, 0, 0 }, 
-            { 0, 2, 1, 1, 0, 0 }, 
-            { 2, 0, 1, 1, 0, 0 }, 
-            { 0, 0, 1, 0, 0, 0 },
-            { 0, 1, 0, 0, 2, 0 }, 
-            { 0, 0, 0, 0, 0, 0 }, };
-
-        evaluateNEW(int_board);
+        // evaluate(int_board);
     }
 }
