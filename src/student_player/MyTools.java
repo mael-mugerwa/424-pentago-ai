@@ -3,6 +3,9 @@ package student_player;
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoBoardState.Piece;
 import pentago_twist.PentagoCoord;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
 public class MyTools {
@@ -15,107 +18,10 @@ public class MyTools {
     private final static int twoBlocked = 1;
     private final static int centerQuadrant = 20;
 
-    private static Piece[][] board;
-    private static final UnaryOperator<PentagoCoord> getNextHorizontal = c -> new PentagoCoord(c.getX(), c.getY() + 1);
-    private static final UnaryOperator<PentagoCoord> getNextVertical = c -> new PentagoCoord(c.getX() + 1, c.getY());
-    private static final UnaryOperator<PentagoCoord> getNextDiagRight = c -> new PentagoCoord(c.getX() + 1,
-            c.getY() + 1);
-    private static final UnaryOperator<PentagoCoord> getNextDiagLeft = c -> new PentagoCoord(c.getX() + 1,
-            c.getY() - 1);
-
-    private static int checkConsecutivePiecesRange(int player, int xStart, int xEnd, int yStart, int yEnd,
-            UnaryOperator<PentagoCoord> direction) {
-        int score = 0;
-        for (int i = xStart; i < xEnd; i++) {
-            for (int j = yStart; j < yEnd;) {
-                int ret = checkConsecutivePieces(player, new PentagoCoord(i, j), direction);
-                if (ret == win) {
-                    j += 5;
-                } else if (ret == fourBlocked || ret == fourWinnable) {
-                    j += 4;
-                } else if (ret == threeBlocked || ret == threeWinnable) {
-                    j += 3;
-                } else if (ret == twoBlocked || ret == twoWinnable) {
-                    j += 2;
-                } else {
-                    j++;
-                }
-                score += ret;
-            }
-        }
-        return score;
-    }
-
-    private static int checkConsecutivePieces(int player, PentagoCoord start, UnaryOperator<PentagoCoord> direction) {
-        int consecutivePiecesCounter = 0;
-        int winnableCounter = 0;
-        Piece currColour = player == 0 ? Piece.WHITE : Piece.BLACK;
-        PentagoCoord current = start;
-        while (true) {
-            try {
-                if (currColour == board[current.getX()][current.getY()]) {
-                    consecutivePiecesCounter++;
-                    winnableCounter++;
-                    current = direction.apply(current);
-                }
-                // else, test to see if pieces are empty
-                else if (Piece.EMPTY == board[current.getX()][current.getY()]) {
-                    winnableCounter++; // used to test if current row/col/diagonal is blocked or not
-                    current = direction.apply(current);
-                }
-                // we have an opponent piece
-                else {
-                    break;
-                }
-            } catch (IllegalArgumentException e) { // We have run off the board
-                break;
-            }
-        }
-
-        boolean notBlocked = winnableCounter >= 5;
-        if (consecutivePiecesCounter >= 5) {
-            return win;
-        } else if (consecutivePiecesCounter == 4) {
-            if (notBlocked) {
-                return fourWinnable;
-            } else {
-                return fourBlocked;
-            }
-        } else if (consecutivePiecesCounter == 3) {
-            if (notBlocked) {
-                return threeWinnable;
-            } else {
-                return threeBlocked;
-            }
-        } else if (consecutivePiecesCounter == 2) {
-            if (notBlocked) {
-                return twoWinnable;
-            } else {
-                return twoBlocked;
-            }
-        }
-        return 0;
-    }
-
-    private static int checkVerticalWin(int player) {
-        return checkConsecutivePiecesRange(player, 0, 2, 0, PentagoBoardState.BOARD_SIZE, getNextVertical);
-    }
-
-    private static int checkHorizontalWin(int player) {
-        return checkConsecutivePiecesRange(player, 0, PentagoBoardState.BOARD_SIZE, 0, 2, getNextHorizontal);
-    }
-
-    private static int checkDiagRightWin(int player) {
-        return checkConsecutivePiecesRange(player, 0, 2, 0, 2, getNextDiagRight);
-    }
-
-    private static int checkDiagLeftWin(int player) {
-        return checkConsecutivePiecesRange(player, 0, 2, PentagoBoardState.BOARD_SIZE - 2, PentagoBoardState.BOARD_SIZE,
-                getNextDiagLeft);
-    }
+    private static int[][] board;
 
     private static int checkCenterQuandrant(int player) {
-        Piece currColour = player == 0 ? Piece.WHITE : Piece.BLACK;
+        int currColour = player == 0 ? 1 : 2;
         int score = 0;
         if (currColour == board[1][1])
             score += centerQuadrant;
@@ -129,36 +35,114 @@ public class MyTools {
         if (currColour == board[4][4])
             score += centerQuadrant;
 
+        System.out.println("num of quadrants " + (score / centerQuadrant));
         return score;
     }
 
-    public static int evaluate(PentagoBoardState boardState) {
-        // public static int evaluate(Piece[][] boardState) {
+    // public static int evaluate(PentagoBoardState boardState) {
+    public static int evaluate(Piece[][] boardState) {
         // long startTime = System.currentTimeMillis();
 
-        int turnPlayer = boardState.getTurnPlayer();
-        board = boardState.getBoard();
-        // int turnPlayer = 0;
+        // int turnPlayer = boardState.getTurnPlayer();
+        // board = boardState.getBoard();
+        int turnPlayer = 0;
 
         // test all rows, colums,
         int score = 0;
-        score += checkVerticalWin(turnPlayer);
-        score += checkHorizontalWin(turnPlayer);
-        score += checkDiagRightWin(turnPlayer);
-        score += checkDiagLeftWin(turnPlayer);
+        System.out.println("VERTICAL");
+        score += checkVerticalWin(turnPlayer, 2);
+        System.out.println("HORIZONTAL");
+        score += checkHorizontalWin(turnPlayer, 2);
+        System.out.println("R DIAGONAL");
+        score += checkDiagRightWin(turnPlayer, 2);
+        System.out.println("L DIAGONAL");
+        score += checkDiagLeftWin(turnPlayer, 2);
+        System.out.println("QUADRANTS");
         score += checkCenterQuandrant(turnPlayer);
 
         int opponent = 1 - turnPlayer;
-        score -= checkVerticalWin(opponent);
-        score -= checkHorizontalWin(opponent);
-        score -= checkDiagRightWin(opponent);
-        score -= checkDiagLeftWin(opponent);
-        score -= checkCenterQuandrant(opponent);
+        System.out.println("OPPONENT");
+        score -= checkVerticalWin(opponent, 5);
+        score -= checkHorizontalWin(opponent, 5);
+        score -= checkDiagRightWin(opponent, 5);
+        score -= checkDiagLeftWin(opponent, 5);
 
         // long endTime = System.currentTimeMillis();
         // System.out.println("evaluation took " + (endTime-startTime));
-        // System.out.println("evaluation score " + score);
+        System.out.println("evaluation score " + score);
         return score;
+    }
+
+    public static ArrayList<String> getDiagonals(int[][] array) {
+        int length = array.length;
+        ArrayList<String> ret = new ArrayList<String>(22);
+
+        String tmp = "";
+        for (int k = 0; k < length; k++) {
+            for (int j = 0; j <= k; j++) {
+                int i = k - j;
+                tmp += array[i][j];
+            }
+            ret.add(tmp);
+            tmp = "";
+        }
+
+        tmp = "";
+        for (int k = length - 2; k >= 0; k--) {
+            for (int j = 0; j <= k; j++) {
+                int i = k - j;
+                tmp += array[length - j - 1][length - i - 1];
+            }
+            ret.add(tmp);
+            tmp = "";
+        }
+
+        // right diagonals top half
+        tmp = "";
+        for (int i = length - 1; i > 0; i--) {
+            for (int j = 0, x = i; x < length; j++, x++) {
+                tmp += array[x][j];
+            }
+            ret.add(tmp);
+            tmp = "";
+        }
+
+        tmp = "";
+        for (int i = 0; i < length; i++) {
+            for (int j = 0, y = i; y < length; j++, y++) {
+                tmp += array[j][y];
+            }
+            ret.add(tmp);
+            tmp = "";
+        }
+
+        return ret;
+    }
+
+    public static ArrayList<String> getRows(int[][] array) {
+        ArrayList<String> ret = new ArrayList<String>(6);
+        String tmp = "";
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 6; j++) {
+                tmp += array[i][j];
+            }
+            ret.add(tmp);
+            tmp="";
+        }
+        return ret;
+    }
+
+    public static ArrayList<String> getColumns(int[][] array) {
+        ArrayList<String> ret = new ArrayList<String>(6);
+        String tmp = "";
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 6; j++) {
+                tmp += array[j][i];
+            }
+            ret.add(tmp);
+            tmp="";
+        }
+        return ret;
     }
 
     public static void main(String[] args) {
@@ -166,9 +150,36 @@ public class MyTools {
                 { Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.EMPTY },
                 { Piece.WHITE, Piece.EMPTY, Piece.WHITE, Piece.WHITE, Piece.EMPTY, Piece.BLACK },
                 { Piece.EMPTY, Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.EMPTY, Piece.EMPTY },
-                { Piece.BLACK, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.BLACK },
+                { Piece.BLACK, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.WHITE, Piece.BLACK },
                 { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.BLACK, Piece.EMPTY, Piece.EMPTY }, };
-        // board = boarding;
+
+        int[][] int_board = { 
+            { 1, 0, 1, 1, 2, 0 }, 
+            { 2, 1, 2, 1, 2, 0 }, 
+            { 1, 0, 1, 1, 0, 2 }, 
+            { 0, 2, 1, 2, 0, 0 },
+            { 2, 0, 0, 0, 1, 2 }, 
+            { 0, 0, 0, 2, 0, 0 }, };
+            
+        String[] expected = {"20", "111", "0021", "22112", "001120", "00200", "0002", "210", "02", "20", "000", "1202", "20100", "111210", "02102", "1100", "122", "20"};
+        System.out.println(Arrays.toString(expected));
+        ArrayList<String> diags = getDiagonals(int_board);
+        System.out.println(diags.toString());
+
+        // ArrayList<String> rows = getRows(int_board);
+        // System.out.println(rows.toString());
+        // ArrayList<String> cols = getColumns(int_board);
+        // System.out.println(cols.toString());
+
+        // System.out.println("SIZE "+list.size());
+        // for (String s : list){
+        // System.out.println(s);
+        // }
+
+        // String a = "1-110-10";
+        // String[] arr = a.split("-1");
+
+        // System.out.println(Arrays.toString(arr));
         // evaluate(board);
     }
 }
