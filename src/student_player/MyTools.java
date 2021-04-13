@@ -7,10 +7,14 @@ import java.util.function.UnaryOperator;
 
 public class MyTools {
     private final static int win = Integer.MAX_VALUE;
-    private final static int fourWinnable = 10000;
-    private final static int fourBlocked = 100;
-    private final static int threeWinnable = 1000;
-    private final static int threeBlocked = 10;
+    private final static int fourWinnable = 100000;
+    private final static int fourBlocked = 1000;
+    private final static int threeWinnable = 10000;
+    private final static int threeBlocked = 100;
+    private final static int twoWinnable = 5;
+    private final static int twoBlocked = 1;
+    private final static int blocked = 0;
+    private final static int centerQuadrant = 20;
 
     private static Piece[][] board;
     private static final UnaryOperator<PentagoCoord> getNextHorizontal = c -> new PentagoCoord(c.getX(), c.getY() + 1);
@@ -24,19 +28,17 @@ public class MyTools {
             UnaryOperator<PentagoCoord> direction) {
         int score = 0;
         for (int i = xStart; i < xEnd; i++) {
-            for (int j = yStart; j < yEnd; ) {
-                // score += checkConsecutivePieces(player, new PentagoCoord(i, j), direction);
+            for (int j = yStart; j < yEnd;) {
                 int ret = checkConsecutivePieces(player, new PentagoCoord(i, j), direction);
                 if (ret == win) {
                     j += 5;
-                }
-                else if (ret == fourBlocked || ret == fourWinnable) {
+                } else if (ret == fourBlocked || ret == fourWinnable) {
                     j += 4;
-                }
-                else if (ret == threeBlocked || ret == threeWinnable) {
+                } else if (ret == threeBlocked || ret == threeWinnable) {
                     j += 3;
-                }
-                else{
+                } else if (ret == twoBlocked || ret == twoWinnable) {
+                    j += 2;
+                } else {
                     j++;
                 }
                 score += ret;
@@ -73,23 +75,24 @@ public class MyTools {
 
         boolean notBlocked = winnableCounter >= 5;
         if (consecutivePiecesCounter >= 5) {
-            // System.out.println("5 in a row");
             return win;
         } else if (consecutivePiecesCounter == 4) {
             if (notBlocked) {
-                // System.out.println("4 in a row winnable");
                 return fourWinnable;
             } else {
-                // System.out.println("4 in a row blocked");
                 return fourBlocked;
             }
         } else if (consecutivePiecesCounter == 3) {
             if (notBlocked) {
-                // System.out.println("3 in a row winnable");
                 return threeWinnable;
             } else {
-                // System.out.println("3 in a row blocked");
                 return threeBlocked;
+            }
+        } else if (consecutivePiecesCounter == 2) {
+            if (notBlocked) {
+                return twoWinnable;
+            } else {
+                return twoBlocked;
             }
         }
         return 0;
@@ -112,9 +115,31 @@ public class MyTools {
                 getNextDiagLeft);
     }
 
+    private static int checkCenterQuandrant(int player) {
+        Piece currColour = player == 0 ? Piece.WHITE : Piece.BLACK;
+        int score = 0;
+        if (currColour == board[1][1])
+            score += centerQuadrant;
+
+        if (currColour == board[1][4])
+            score += centerQuadrant;
+
+        if (currColour == board[4][1])
+            score += centerQuadrant;
+
+        if (currColour == board[4][4])
+            score += centerQuadrant;
+
+        return score;
+    }
+
     public static int evaluate(PentagoBoardState boardState) {
+        // public static int evaluate(Piece[][] boardState) {
+        // long startTime = System.currentTimeMillis();
+
         int turnPlayer = boardState.getTurnPlayer();
         board = boardState.getBoard();
+        // int turnPlayer = 0;
 
         // test all rows, colums,
         int score = 0;
@@ -122,19 +147,29 @@ public class MyTools {
         score += checkHorizontalWin(turnPlayer);
         score += checkDiagRightWin(turnPlayer);
         score += checkDiagLeftWin(turnPlayer);
-        // System.out.println("evaluation player " + turnPlayer + " : " + score);
+        score += checkCenterQuandrant(turnPlayer);
+
+        int opponent = 1 - turnPlayer;
+        score -= checkVerticalWin(opponent);
+        score -= checkHorizontalWin(opponent);
+        score -= checkDiagRightWin(opponent);
+        score -= checkDiagLeftWin(opponent);
+        score -= checkCenterQuandrant(opponent);
+
+        // long endTime = System.currentTimeMillis();
+        // System.out.println("evaluation took " + (endTime-startTime));
+        // System.out.println("evaluation score " + score);
         return score;
     }
 
     public static void main(String[] args) {
-        Piece[][] boarding = { 
-                { Piece.WHITE, Piece.WHITE, Piece.WHITE, Piece.WHITE, Piece.BLACK, Piece.EMPTY },
-                { Piece.WHITE, Piece.WHITE, Piece.WHITE, Piece.WHITE, Piece.EMPTY, Piece.EMPTY },
-                { Piece.EMPTY, Piece.EMPTY, Piece.WHITE, Piece.WHITE, Piece.EMPTY, Piece.EMPTY },
-                { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.BLACK, Piece.EMPTY, Piece.EMPTY },
-                { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY },
-                { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY }, };
-        board = boarding;
+        Piece[][] boarding = { { Piece.WHITE, Piece.EMPTY, Piece.WHITE, Piece.WHITE, Piece.BLACK, Piece.EMPTY },
+                { Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.EMPTY },
+                { Piece.WHITE, Piece.EMPTY, Piece.WHITE, Piece.WHITE, Piece.EMPTY, Piece.BLACK },
+                { Piece.EMPTY, Piece.BLACK, Piece.WHITE, Piece.BLACK, Piece.EMPTY, Piece.EMPTY },
+                { Piece.BLACK, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.BLACK },
+                { Piece.EMPTY, Piece.EMPTY, Piece.EMPTY, Piece.BLACK, Piece.EMPTY, Piece.EMPTY }, };
+        // board = boarding;
         // evaluate(board);
     }
 }

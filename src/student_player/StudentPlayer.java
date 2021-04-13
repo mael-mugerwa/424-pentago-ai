@@ -1,20 +1,19 @@
 package student_player;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import boardgame.Move;
-
+import boardgame.Server;
 import pentago_twist.PentagoPlayer;
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoMove;
-import boardgame.Server;
 
 /** A player file submitted by a student. */
 public class StudentPlayer extends PentagoPlayer {
-    public static boolean searchCutoff = false;
-    public static final int winCutoff = 500000;
-
     public static int myPlayer;
+    public static long startTime, endTime;
+    public static boolean cutoff;
+    public static PentagoMove randomMove;
 
     /**
      * You must modify this constructor to return your student number. This is
@@ -36,115 +35,107 @@ public class StudentPlayer extends PentagoPlayer {
         // strategies...
 
         myPlayer = boardState.getTurnPlayer();
+        startTime = System.currentTimeMillis();
+        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 50
+                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 50;
+        cutoff = false;
+        randomMove = (PentagoMove) boardState.getRandomMove();
 
-        int maxScore = Integer.MIN_VALUE;
-        PentagoMove bestMove = null;
-
-        ArrayList<PentagoMove> moves = boardState.getAllLegalMoves();
-
-        for (PentagoMove move : moves) {
-            // Copy the current game state
-            PentagoBoardState newBoard = (PentagoBoardState) boardState.clone();
-            newBoard.processMove(move);
-
-            // Compute how long to spend looking at each move
-            long searchTimeLimit = ((Server.DEFAULT_TIMEOUT - 1000) / (moves.size()));
-
-            int score = iterativeDeepening(newBoard, searchTimeLimit);
-
-            // If the search finds a winning move
-            if (score >= winCutoff) {
-                return move;
-            }
-
-            if (score > maxScore) {
-                maxScore = score;
-                bestMove = move;
-            }
-        }
-
-        // Return your move to be processed by the server.
-        return bestMove;
-    }
-
-    public static int iterativeDeepening(PentagoBoardState boardState, long timeLimit) {
-        long startTime = System.currentTimeMillis();
-        long endTime = startTime + timeLimit;
+        Result bestResult = new Result(randomMove, 0);
         int depth = 1;
-        int score = 0;
-        searchCutoff = false;
-
         while (true) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime >= endTime) {
+            Result res = minimax(boardState, depth, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            if (res.getScore() > bestResult.getScore())
+                bestResult = res;
+
+            if (cutoff) {
+                System.out.println("Cutoff search at depth " + depth);
                 break;
             }
-
-            int searchResult = minimax(boardState, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, currentTime,
-                    endTime - currentTime);
-
-            // If the search finds a winning move, stop searching
-            if (searchResult >= winCutoff) {
-                return searchResult;
-            }
-
-            if (!searchCutoff) {
-                score = searchResult;
-            }
-
             depth++;
         }
 
-        return score;
+        System.out.println("Found Best Move in " + (System.currentTimeMillis() - startTime));
+        return bestResult.getBestMove();
     }
 
-    // search() will perform minimax search with alpha-beta pruning on a game state,
-    // and will cut off if the given time
-    // limit has elapsed since the beginning of the search
-    public static int minimax(PentagoBoardState boardState, int depth, int alpha, int beta, long startTime,
-            long timeLimit) {
-        ArrayList<PentagoMove> moves = boardState.getAllLegalMoves();
-        boolean maximize = boardState.getTurnPlayer() == StudentPlayer.myPlayer;
+    final class Result {
+        private final PentagoMove bestMove;
+        private final int score;
 
-        int savedScore = (maximize) ? Integer.MIN_VALUE : Integer.MAX_VALUE;
-        int score = MyTools.evaluate(boardState);
-        long currentTime = System.currentTimeMillis();
-        long elapsedTime = (currentTime - startTime);
-
-        if (elapsedTime >= timeLimit) {
-            searchCutoff = true;
+        public Result(PentagoMove bestMove, int score) {
+            this.bestMove = bestMove;
+            this.score = score;
         }
 
-        // If this is a terminal node or a win for either player, abort the search
-        if (searchCutoff || (depth == 0) || (moves.size() == 0) || (score >= winCutoff) || (score <= -winCutoff)) {
+        public PentagoMove getBestMove() {
+            return bestMove;
+        }
+
+        public int getScore() {
             return score;
         }
+    }
 
-        if (maximize) {
-            for (PentagoMove move : moves) {
-                PentagoBoardState boardClone = (PentagoBoardState) boardState.clone();
-                boardClone.processMove(move);
-
-                alpha = Math.max(alpha, minimax(boardClone, depth - 1, alpha, beta, startTime, timeLimit));
-
-                if (beta <= alpha) {
-                    break;
-                }
-            }
-
-            return alpha;
-        } else {
-            for (PentagoMove move : moves) {
-                PentagoBoardState boardClone = (PentagoBoardState) boardState.clone();
-                boardClone.processMove(move);
-
-                beta = Math.min(beta, minimax(boardClone, depth - 1, alpha, beta, startTime, timeLimit));
-
-                if (beta <= alpha) {
-                    break;
-                }
-            }
-            return beta;
+    private Result minimax(PentagoBoardState boardState, int depth, boolean maximizingPlayer, int alpha, int beta) {
+        if (boardState.gameOver() || depth == 0) {
+            MyTools.evaluate(boardState);
         }
+
+        List<PentagoMove> moves = boardState.getAllLegalMoves();
+        PentagoMove bestMove = randomMove;
+        PentagoBoardState boardClone;
+
+        int curEval;
+
+        if (maximizingPlayer) {
+            int maxEval = Integer.MIN_VALUE;
+            for (PentagoMove move : moves) {
+                if (timeExceeded()) {
+                    cutoff = true;
+                    break;
+                }
+
+                boardClone = (PentagoBoardState) boardState.clone();
+                boardClone.processMove(move);
+                Result res = minimax(boardClone, depth - 1, false, alpha, beta);
+                curEval = res.getScore();
+
+                if (curEval > maxEval) {
+                    maxEval = curEval;
+                    bestMove = move;
+                }
+                alpha = Math.max(alpha, curEval);
+                if (beta <= alpha)
+                    break;
+            }
+            return new Result(bestMove, maxEval);
+        } else {
+            int minEval = Integer.MAX_VALUE;
+            for (PentagoMove move : moves) {
+                if (timeExceeded()) {
+                    cutoff = true;
+                    break;
+                }
+
+                boardClone = (PentagoBoardState) boardState.clone();
+                boardClone.processMove(move);
+                Result res = minimax(boardClone, depth - 1, true, alpha, beta);
+                curEval = res.getScore();
+
+                if (curEval < minEval) {
+                    minEval = curEval;
+                    bestMove = move;
+                }
+                beta = Math.min(beta, curEval);
+                if (beta <= alpha)
+                    break;
+            }
+            return new Result(bestMove, minEval);
+        }
+    }
+
+    public static boolean timeExceeded() {
+        return (System.currentTimeMillis() > endTime);
     }
 }
