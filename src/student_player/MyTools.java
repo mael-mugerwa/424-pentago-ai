@@ -4,11 +4,12 @@ import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoBoardState.Piece;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MyTools {
 
     // evaluation for each position
-    private final static int win = Integer.MAX_VALUE;
+    private final static int win = 1000000;
     private final static int fourWinnable = 10000;
     private final static int fourBlocked = 0;
     private final static int threeWinnable = 1000;
@@ -33,8 +34,20 @@ public class MyTools {
     // (if I only want to evaluate wins, I set stopAt = 5; for 4 in a row, set to 4)
     private static int stopAt = 0;
 
-    // make an int[][] board based on boardState (white = 1, black = 2, empty = 0)
-    private static int[][] getBoard(PentagoBoardState boardState) {
+    // turn int[][] board into a string
+    public static String getBoardString(PentagoBoardState boardState) {
+        String ret = "";
+        int[][] board = getBoard(boardState);
+        for (int[] i : board) {
+            ret += Arrays.toString(i);
+        }
+
+        return ret;
+    }
+
+    // return an int[][] corresponding to the board of the board state with (white =
+    // 1, black = 2, empty = 0 )
+    public static int[][] getBoard(PentagoBoardState boardState) {
         int[][] board = new int[6][6];
         for (int j = 0; j < 6; j++) {
             for (int k = 0; k < 6; k++) {
@@ -214,12 +227,16 @@ public class MyTools {
         ArrayList<String> diags = getDiagonals(board);
         ArrayList<String> rows = getRows(board);
         ArrayList<String> cols = getColumns(board);
+
         int score = 0;
         stopAt = 2;
         score += evaluateRow(diags);
         score += evaluateRow(rows);
         score += evaluateRow(cols);
         score += checkCenterQuandrant(board);
+
+        // see if i win
+        boolean iWin = (score >= win);
 
         // switch player pieces to test opponent's position
         int tmp = myPlayerPiece;
@@ -228,25 +245,29 @@ public class MyTools {
 
         // stop opponent eval at 5 as to only remove situations where opponent wins
         stopAt = 5;
-        // subtract opponent's score from myPlayer's turn
-        score -= evaluateRow(diags);
-        score -= evaluateRow(rows);
-        score -= evaluateRow(cols);
-        score -= checkCenterQuandrant(board);
+        // subtract opponent's score from myPlayer's turn to prevent win
+        int opponentScore = 0;
+        opponentScore += evaluateRow(diags);
+        opponentScore += evaluateRow(rows);
+        opponentScore += evaluateRow(cols);
+        score -= opponentScore;
+
+        // see if opponent won
+        boolean opponentWin = (opponentScore >= win);
+
+        if (iWin && opponentWin) {// game drawn avoid if possible
+            return 0;
+        }
 
         return score;
     }
 
-    public static void main(String[] args) {
-        // test eval
-        // int[][] int_board = {
-        // { 2, 1, 1, 1, 0, 0 },
-        // { 0, 2, 1, 1, 0, 0 },
-        // { 2, 0, 1, 1, 0, 0 },
-        // { 0, 0, 1, 0, 0, 0 },
-        // { 0, 1, 0, 0, 2, 0 },
-        // { 0, 0, 0, 0, 0, 0 }, };
+    // public static void main(String[] args) {
+    //     // test evaluation function
+    //     // int[][] int_board = { { 2, 1, 1, 1, 0, 0 }, { 2, 2, 1, 1, 0, 0 }, { 2, 0, 1,
+    //     // 1, 0, 0 }, { 2, 0, 1, 0, 1, 0 },
+    //     // { 2, 1, 0, 0, 2, 0 }, { 2, 0, 0, 0, 0, 0 }, };
 
-        // evaluate(int_board);
-    }
+    //     // System.out.println(evaluate(int_board));
+    // }
 }
