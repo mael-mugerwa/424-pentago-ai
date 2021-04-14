@@ -11,12 +11,12 @@ public class MyTools {
     // evaluation for each position
     private final static int win = 1000000;
     private final static int fourWinnable = 10000;
-    private final static int fourBlocked = 0;
+    private final static int fourBlocked = 100;
     private final static int threeWinnable = 1000;
-    private final static int threeBlocked = 0;
-    private final static int twoWinnable = 1;
+    private final static int threeBlocked = 50;
+    private final static int twoWinnable = 0;
     private final static int twoBlocked = 0;
-    private final static int centerQuadrant = 5;
+    private final static int centerQuadrant = 50;
     // private final static int fourWinnable = 100000;
     // private final static int fourBlocked = 1000;
     // private final static int threeWinnable = 10000;
@@ -244,7 +244,7 @@ public class MyTools {
         opponentPlayerPiece = tmp;
 
         // stop opponent eval at 5 as to only remove situations where opponent wins
-        stopAt = 5;
+        stopAt = 2;
         // subtract opponent's score from myPlayer's turn to prevent win
         int opponentScore = 0;
         opponentScore += evaluateRow(diags);

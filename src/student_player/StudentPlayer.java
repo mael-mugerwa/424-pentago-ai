@@ -23,7 +23,7 @@ public class StudentPlayer extends PentagoPlayer {
      * associate you with your agent. The constructor should do nothing else.
      */
     public StudentPlayer() {
-        super("260805446");
+        super("260805446-8");
     }
 
     /**
@@ -39,12 +39,12 @@ public class StudentPlayer extends PentagoPlayer {
         // set myPlayer, start time and end time
         myPlayer = boardState.getTurnPlayer();
         startTime = System.currentTimeMillis();
-        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 500
-                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 500;
+        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 10
+                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 10;
 
         // boolean flag to indicate that minimax was cutoff to avoid timeout
         cutoff = false;
-        // hashMap transition table
+        // hashMap transposition table
         hashMap = new HashMap<String, TTEntry>();
 
         // initialize best result with random values
@@ -69,7 +69,7 @@ public class StudentPlayer extends PentagoPlayer {
             depth++; // increment depth
         }
 
-        System.out.println("Found Best Move in " + (System.currentTimeMillis() - startTime));
+        System.out.println("Found Best Move with score "+ bestResult.getScore() +" in " + (System.currentTimeMillis() - startTime));
         return bestResult.getBestMove();
     }
 
@@ -78,7 +78,6 @@ public class StudentPlayer extends PentagoPlayer {
         private PentagoMove bestMove;
         private int score;
         private int depth;
-        private int type;
 
         public TTEntry(PentagoMove bestMove, int score, int depth) {
             this.bestMove = bestMove;
@@ -102,12 +101,8 @@ public class StudentPlayer extends PentagoPlayer {
     private TTEntry minimax(PentagoBoardState boardState, int depth, boolean maximizingPlayer, int alpha, int beta) {
         // search for boardState in Transposition Table instead of running minimax
         TTEntry tte = hashMap.get(MyTools.getBoardString(boardState));
-        if (tte != null) {
-            if (tte.depth < depth) // useless remove from Transposition Table
-                hashMap.remove(MyTools.getBoardString(boardState));
-            else {
-                return tte;
-            }
+        if (tte != null && tte.depth >= depth) {
+            return tte;
         }
 
         // minimax algorithm

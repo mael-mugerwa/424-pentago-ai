@@ -38,14 +38,17 @@ public class Autoplay {
             server_pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 
             Process server = server_pb.start();
-
+            System.out.println("1");
+            
             ProcessBuilder client1_pb = new ProcessBuilder("java", "-cp", "bin", "-Xms520m", "-Xmx520m",
-                    "boardgame.Client", "pentago_swap.RandomPentagoPlayer");
+                    "boardgame.Client", "improved.StudentPlayer");
             client1_pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 
+            System.out.println("2");
             ProcessBuilder client2_pb = new ProcessBuilder("java", "-cp", "bin", "-Xms520m", "-Xmx520m",
                     "boardgame.Client", "student_player.StudentPlayer");
             client2_pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            System.out.println("3");
 
             for (int i = 0; i < n_games; i++) {
                 System.out.println("Game " + i);

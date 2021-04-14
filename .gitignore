@@ -1,1 +1,5 @@
 logs/*
+.vscode/*
+Submission*
+.classpath
+.project
