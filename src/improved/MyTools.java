@@ -9,12 +9,13 @@ import java.util.Arrays;
 public class MyTools {
 
     // evaluation for each position
-    private final static int win = 1000000;
+	
+    public final static int win = 1000000;
     private final static int fourWinnable = 10000;
     private final static int fourBlocked = 100;
     private final static int threeWinnable = 1000;
     private final static int threeBlocked = 50;
-    private final static int twoWinnable = 0;
+    private final static int twoWinnable = 10;
     private final static int twoBlocked = 0;
     private final static int centerQuadrant = 50;
 
@@ -25,7 +26,7 @@ public class MyTools {
 
     // variable to indicate at what point to stop evaluation
     // (if I only want to evaluate wins, I set stopAt = 5; for 4 in a row, set to 4)
-    private static int stopAt = 0;
+    public static int stopAt = 0;
 
     // turn int[][] board into a string
     public static String getBoardString(PentagoBoardState boardState) {
@@ -75,7 +76,7 @@ public class MyTools {
     }
 
     // return all diagonals of length >= 2 as strings in an arraylist
-    private static ArrayList<String> getDiagonals(int[][] array) {
+    public static ArrayList<String> getDiagonals(int[][] array) {
         int length = array.length;
         ArrayList<String> ret = new ArrayList<String>(22);
 
@@ -123,7 +124,7 @@ public class MyTools {
     }
 
     // return all rows of the board as strings in an arraylist
-    private static ArrayList<String> getRows(int[][] array) {
+    public static ArrayList<String> getRows(int[][] array) {
         ArrayList<String> ret = new ArrayList<String>(6);
         String tmp = "";
         for (int i = 0; i < 6; i++) {
@@ -137,7 +138,7 @@ public class MyTools {
     }
 
     // return all columns of the board as strings in an arraylist
-    private static ArrayList<String> getColumns(int[][] array) {
+    public static ArrayList<String> getColumns(int[][] array) {
         ArrayList<String> ret = new ArrayList<String>(6);
         String tmp = "";
         for (int i = 0; i < 6; i++) {
@@ -153,7 +154,7 @@ public class MyTools {
     // evaluates all the rows of the list by splitting them into strings with only
     // myPlayer's pieces
     // (can also be used to evaluate diagonals and columns )
-    private static int evaluateRow(ArrayList<String> rows) {
+    public static int evaluateRow(ArrayList<String> rows) {
         int score = 0;
         // for each row
         for (String row : rows) {
@@ -236,8 +237,8 @@ public class MyTools {
         myPlayerPiece = opponentPlayerPiece;
         opponentPlayerPiece = tmp;
 
-        // stop opponent eval at 5 as to only remove situations where opponent wins
-        stopAt = 2;
+        // stop opponent eval at 4 as to only remove situations where opponent wins
+        stopAt = 3;
         // subtract opponent's score from myPlayer's turn to prevent win
         int opponentScore = 0;
         opponentScore += evaluateRow(diags);

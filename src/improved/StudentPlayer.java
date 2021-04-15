@@ -1,9 +1,10 @@
 package improved;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import boardgame.Move;
 import boardgame.Server;
@@ -25,7 +26,7 @@ public class StudentPlayer extends PentagoPlayer {
      * associate you with your agent. The constructor should do nothing else.
      */
     public StudentPlayer() {
-        super("testing-8");
+        super("testing-9");
     }
 
     /**
@@ -41,8 +42,8 @@ public class StudentPlayer extends PentagoPlayer {
         // set myPlayer, start time and end time
         myPlayer = boardState.getTurnPlayer();
         startTime = System.currentTimeMillis();
-        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 10
-                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 10;
+        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 50
+                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 50;
 
         // boolean flag to indicate that minimax was cutoff to avoid timeout
         cutoff = false;
@@ -51,13 +52,11 @@ public class StudentPlayer extends PentagoPlayer {
         if (boardState.getTurnNumber() == 0)// initialize hash map
             hashMap = new HashMap<String, TTEntry>();
         else { // clean hashMap by removing useless moves
-               // iterate over the hash map
-               // if an entry has a lower turn number than the current one, it will never be
-               // useful
             int a = hashMap.size();
+            // if an entry has a lower turn # than the current one, it's useless remove it
             hashMap.entrySet().removeIf(entry -> entry.getValue().getTurnNumber() < boardState.getTurnNumber());
             int b = hashMap.size();
-            System.out.println("Actually removed " + (a - b) + " items from map");
+            System.out.println("Removed " + (a - b) + " items from map");
         }
 
         // initialize best result with random values
@@ -77,13 +76,26 @@ public class StudentPlayer extends PentagoPlayer {
             if (cutoff) {
                 // System.out.println("Cutoff search at depth " + depth);
                 System.out.println("Hash map size " + hashMap.size());
+
+                // force 1st move to be a center quadrant move if possible
+                if (boardState.getTurnNumber() == 0) {
+                    int[][] board = MyTools.getBoard(boardState);
+                    if (0 == board[1][1]) {
+                        return new PentagoMove(1, 1, 0, 0, boardState.getTurnPlayer());
+                    } else if (0 == board[1][4]) {
+                        return new PentagoMove(1, 4, 1, 0, boardState.getTurnPlayer());
+                    } else if (0 == board[4][1]) {
+                        return new PentagoMove(4, 1, 2, 0, boardState.getTurnPlayer());
+                    } else if (0 == board[4][4]) {
+                        return new PentagoMove(4, 4, 3, 0, boardState.getTurnPlayer());
+                    }
+                }
                 break;
             }
             depth++; // increment depth
         }
 
-        System.out.println("Found Best Move with score " + bestResult.getScore() + " in "
-                + (System.currentTimeMillis() - startTime));
+        System.out.println("Found Best Move with score in " + (System.currentTimeMillis() - startTime));
         return bestResult.getBestMove();
     }
 
@@ -131,6 +143,10 @@ public class StudentPlayer extends PentagoPlayer {
         }
 
         List<PentagoMove> moves = boardState.getAllLegalMoves();
+        moves.removeIf(move -> testMove(boardState, move));
+
+//        Collections.sort(moves, new MoveComparator(boardState));
+
         PentagoMove bestMove = moves.get(0);
 
         if (maximizingPlayer) {
@@ -186,4 +202,90 @@ public class StudentPlayer extends PentagoPlayer {
     public static boolean timeExceeded() {
         return (System.currentTimeMillis() > endTime);
     }
+
+    public boolean testMove(PentagoBoardState boardState, PentagoMove move) {
+        PentagoBoardState boardClone = (PentagoBoardState) boardState.clone();
+        boardClone.processMove(move);
+
+        // test see if opponent wins
+        MyTools.stopAt = 5;
+
+        int[][] board = MyTools.getBoard(boardClone);
+
+        ArrayList<String> diags = MyTools.getDiagonals(board);
+        ArrayList<String> rows = MyTools.getRows(board);
+        ArrayList<String> cols = MyTools.getColumns(board);
+
+        int opponentScore = 0;
+        opponentScore += MyTools.evaluateRow(diags);
+        opponentScore += MyTools.evaluateRow(rows);
+        opponentScore += MyTools.evaluateRow(cols);
+
+        if (opponentScore >= MyTools.win) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean testMove2(PentagoBoardState boardState, PentagoMove move) {
+        PentagoBoardState boardClone = (PentagoBoardState) boardState.clone();
+        boardClone.processMove(move);
+
+        int score = MyTools.evaluate(boardClone);
+
+        if (score <= 0) {
+            return true;
+        }
+        return false;
+    }
+
+    final class MoveComparator implements Comparator<PentagoMove> {
+
+        private PentagoBoardState boardState;
+
+        public MoveComparator(PentagoBoardState boardState) {
+            this.boardState = boardState;
+        }
+
+        @Override
+        public int compare(PentagoMove moveA, PentagoMove moveB) {
+            PentagoBoardState boardCloneA = (PentagoBoardState) this.boardState.clone();
+            boardCloneA.processMove(moveA);
+            PentagoBoardState boardCloneB = (PentagoBoardState) this.boardState.clone();
+            boardCloneB.processMove(moveB);
+
+            int a = MyTools.evaluate(boardCloneA);
+            int b = MyTools.evaluate(boardCloneB);
+            return -(a - b);
+        }
+    }
+
+    public void orderMoves(PentagoBoardState boardState, PentagoMove moveA, PentagoMove moveB) {
+        PentagoBoardState boardCloneA = (PentagoBoardState) boardState.clone();
+        boardCloneA.processMove(moveA);
+        PentagoBoardState boardCloneB = (PentagoBoardState) boardState.clone();
+        boardCloneB.processMove(moveB);
+    }
+
+    public void testOrdering(PentagoBoardState boardState, List<PentagoMove> moves) {
+        boolean fail = false;
+    	for (int i =0 ; i<moves.size()-1; i++) {
+        	PentagoBoardState boardCloneA = (PentagoBoardState) boardState.clone();
+            boardCloneA.processMove(moves.get(i));
+            PentagoBoardState boardCloneB = (PentagoBoardState) boardState.clone();
+            boardCloneB.processMove(moves.get(i+1));
+            int a = MyTools.evaluate(boardCloneA);
+            int b = MyTools.evaluate(boardCloneB);
+            if(a<b) {
+            	fail = true;
+            }
+          }
+          if(fail) {
+        	  System.out.println("MOVE ORDERING NO WORK");
+          }
+          else {
+        	  System.out.println("YEY"); 
+        }
+    }
+
 }

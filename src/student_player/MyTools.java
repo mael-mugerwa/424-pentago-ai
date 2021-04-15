@@ -17,13 +17,6 @@ public class MyTools {
     private final static int twoWinnable = 0;
     private final static int twoBlocked = 0;
     private final static int centerQuadrant = 50;
-    // private final static int fourWinnable = 100000;
-    // private final static int fourBlocked = 1000;
-    // private final static int threeWinnable = 10000;
-    // private final static int threeBlocked = 100;
-    // private final static int twoWinnable = 5;
-    // private final static int twoBlocked = 1;
-    // private final static int centerQuadrant = 20;
 
     // variables for the piece that corresponds to myPlayer and his opponent
     // if myPlayer is white, myPlayerPiece = 1 for example
