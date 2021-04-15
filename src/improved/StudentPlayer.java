@@ -3,7 +3,6 @@ package improved;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 
 import boardgame.Move;
@@ -26,7 +25,7 @@ public class StudentPlayer extends PentagoPlayer {
      * associate you with your agent. The constructor should do nothing else.
      */
     public StudentPlayer() {
-        super("testing-9");
+        super("testing");
     }
 
     /**
@@ -42,8 +41,8 @@ public class StudentPlayer extends PentagoPlayer {
         // set myPlayer, start time and end time
         myPlayer = boardState.getTurnPlayer();
         startTime = System.currentTimeMillis();
-        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 50
-                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 50;
+        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 100
+                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 100;
 
         // boolean flag to indicate that minimax was cutoff to avoid timeout
         cutoff = false;
@@ -80,6 +79,7 @@ public class StudentPlayer extends PentagoPlayer {
                 // force 1st move to be a center quadrant move if possible
                 if (boardState.getTurnNumber() == 0) {
                     int[][] board = MyTools.getBoard(boardState);
+                    System.out.println("Found 1st Move in " + (System.currentTimeMillis() - startTime));
                     if (0 == board[1][1]) {
                         return new PentagoMove(1, 1, 0, 0, boardState.getTurnPlayer());
                     } else if (0 == board[1][4]) {
@@ -143,9 +143,6 @@ public class StudentPlayer extends PentagoPlayer {
         }
 
         List<PentagoMove> moves = boardState.getAllLegalMoves();
-        moves.removeIf(move -> testMove(boardState, move));
-
-//        Collections.sort(moves, new MoveComparator(boardState));
 
         PentagoMove bestMove = moves.get(0);
 
@@ -269,22 +266,21 @@ public class StudentPlayer extends PentagoPlayer {
 
     public void testOrdering(PentagoBoardState boardState, List<PentagoMove> moves) {
         boolean fail = false;
-    	for (int i =0 ; i<moves.size()-1; i++) {
-        	PentagoBoardState boardCloneA = (PentagoBoardState) boardState.clone();
+        for (int i = 0; i < moves.size() - 1; i++) {
+            PentagoBoardState boardCloneA = (PentagoBoardState) boardState.clone();
             boardCloneA.processMove(moves.get(i));
             PentagoBoardState boardCloneB = (PentagoBoardState) boardState.clone();
-            boardCloneB.processMove(moves.get(i+1));
+            boardCloneB.processMove(moves.get(i + 1));
             int a = MyTools.evaluate(boardCloneA);
             int b = MyTools.evaluate(boardCloneB);
-            if(a<b) {
-            	fail = true;
+            if (a < b) {
+                fail = true;
             }
-          }
-          if(fail) {
-        	  System.out.println("MOVE ORDERING NO WORK");
-          }
-          else {
-        	  System.out.println("YEY"); 
+        }
+        if (fail) {
+            System.out.println("MOVE ORDERING NO WORK");
+        } else {
+            System.out.println("YEY");
         }
     }
 
