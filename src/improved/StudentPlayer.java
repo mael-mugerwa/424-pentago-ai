@@ -41,8 +41,8 @@ public class StudentPlayer extends PentagoPlayer {
         // set myPlayer, start time and end time
         myPlayer = boardState.getTurnPlayer();
         startTime = System.currentTimeMillis();
-        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 100
-                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 100;
+        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 60
+                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 20;
 
         // boolean flag to indicate that minimax was cutoff to avoid timeout
         cutoff = false;
@@ -79,7 +79,7 @@ public class StudentPlayer extends PentagoPlayer {
                 // force 1st move to be a center quadrant move if possible
                 if (boardState.getTurnNumber() == 0) {
                     int[][] board = MyTools.getBoard(boardState);
-                    System.out.println("Found 1st Move in " + (System.currentTimeMillis() - startTime));
+                    System.out.println("TESTING Found 1st Move in " + (System.currentTimeMillis() - startTime));
                     if (0 == board[1][1]) {
                         return new PentagoMove(1, 1, 0, 0, boardState.getTurnPlayer());
                     } else if (0 == board[1][4]) {
@@ -95,7 +95,7 @@ public class StudentPlayer extends PentagoPlayer {
             depth++; // increment depth
         }
 
-        System.out.println("Found Best Move with score in " + (System.currentTimeMillis() - startTime));
+        System.out.println("TESTING Found Best Move in " + (System.currentTimeMillis() - startTime));
         return bestResult.getBestMove();
     }
 
