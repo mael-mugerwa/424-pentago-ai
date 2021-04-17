@@ -63,7 +63,7 @@ public class StudentPlayer extends PentagoPlayer {
         TTEntry bestResult = new TTEntry(randomMove, 0, 0, 0);
 
         // start at depth 1
-        int depth = 1;
+        int depth = boardState.getTurnNumber() == 0 ? 4 : 3;
         // incremental depth minimax
         while (true) {
             // run minimax at current depth
@@ -73,7 +73,7 @@ public class StudentPlayer extends PentagoPlayer {
                 bestResult = res;
 
             if (cutoff) {
-                // System.out.println("Cutoff search at depth " + depth);
+                System.out.println("Cutoff search at depth " + depth);
                 System.out.println("Hash map size " + hashMap.size());
 
                 // force 1st move to be a center quadrant move if possible
@@ -98,6 +98,7 @@ public class StudentPlayer extends PentagoPlayer {
         System.out.println("TESTING Found Best Move in " + (System.currentTimeMillis() - startTime));
         return bestResult.getBestMove();
     }
+        
 
     // class of an entry in my Transposition Table
     final class TTEntry {

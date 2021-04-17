@@ -9,7 +9,7 @@ import java.util.Arrays;
 public class MyTools {
 
     // evaluation for each position
-	
+
     public final static int win = 1000000;
     private final static int fourWinnable = 10000;
     private final static int fourBlocked = 100;
@@ -169,6 +169,15 @@ public class MyTools {
                     winnable = true;
                 }
 
+                // harcoded some great patterns my eval function doesn't detect as great
+                // positions just good enough
+                String[] greatPatterns = { "10111", "11101", "11011", "20222", "22202", "22022" };
+                for (String pattern : greatPatterns) {
+                    if (consecutiveBlock.contains(pattern)) {
+                        return getEval(true, 4);
+                    }
+                }
+
                 // for each split block, split in consecutives pieces of current player by
                 // removing empty pieces
                 for (String consecutivePieces : consecutiveBlock.split("0")) {
@@ -228,7 +237,15 @@ public class MyTools {
         score += evaluateRow(rows);
         score += evaluateRow(cols);
         score += checkCenterQuandrant(board);
+        int currentPlayer = 0;
 
+        if (boardState.getWinner() == currentPlayer) {
+            score = Integer.MAX_VALUE;
+        } else {
+            score = Integer.MIN_VALUE;
+        }
+
+        
         // see if i win
         boolean iWin = (score >= win);
 
@@ -257,11 +274,12 @@ public class MyTools {
     }
 
     // public static void main(String[] args) {
-    //     // test evaluation function
-    //     // int[][] int_board = { { 2, 1, 1, 1, 0, 0 }, { 2, 2, 1, 1, 0, 0 }, { 2, 0, 1,
-    //     // 1, 0, 0 }, { 2, 0, 1, 0, 1, 0 },
-    //     // { 2, 1, 0, 0, 2, 0 }, { 2, 0, 0, 0, 0, 0 }, };
+    // // test evaluation function
+    // // int[][] int_board = { { 2, 1, 1, 1, 0, 0 }, { 2, 2, 1, 1, 0, 0 }, { 2, 0,
+    // 1,
+    // // 1, 0, 0 }, { 2, 0, 1, 0, 1, 0 },
+    // // { 2, 1, 0, 0, 2, 0 }, { 2, 0, 0, 0, 0, 0 }, };
 
-    //     // System.out.println(evaluate(int_board));
+    // // System.out.println(evaluate(int_board));
     // }
 }

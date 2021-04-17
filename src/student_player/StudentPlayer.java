@@ -49,19 +49,17 @@ public class StudentPlayer extends PentagoPlayer {
         if (boardState.getTurnNumber() == 0)// initialize hash map
             hashMap = new HashMap<String, TTEntry>();
         else { // clean hashMap by removing useless moves
-            int a = hashMap.size();
-            // if an entry has a lower turn # than the current one, it's useless remove it
+               // if an entry has a lower turn # than the current one, it's useless remove it
             hashMap.entrySet().removeIf(entry -> entry.getValue().getTurnNumber() < boardState.getTurnNumber());
-            int b = hashMap.size();
-            System.out.println("Removed " + (a - b) + " items from map");
         }
 
         // initialize best result with random values
         randomMove = (PentagoMove) boardState.getRandomMove();
         TTEntry bestResult = new TTEntry(randomMove, 0, 0, 0);
 
-        // start at depth 1
-        int depth = 1;
+        // start at depth 1 except for 1st round where we can start at 4 knowing it'll
+        // complete in time
+        int depth = boardState.getTurnNumber() == 0 ? 4 : 1;
         // incremental depth minimax
         while (true) {
             // run minimax at current depth
@@ -71,13 +69,10 @@ public class StudentPlayer extends PentagoPlayer {
                 bestResult = res;
 
             if (cutoff) {
-                // System.out.println("Cutoff search at depth " + depth);
-                System.out.println("Hash map size " + hashMap.size());
-
                 // force 1st move to be a center quadrant move if possible
                 if (boardState.getTurnNumber() == 0) {
                     int[][] board = MyTools.getBoard(boardState);
-                    System.out.println("OF Found 1st Move in " + (System.currentTimeMillis() - startTime));
+                    System.out.println("Found 1st Move in " + (System.currentTimeMillis() - startTime));
                     if (0 == board[1][1]) {
                         return new PentagoMove(1, 1, 0, 0, boardState.getTurnPlayer());
                     } else if (0 == board[1][4]) {
@@ -93,11 +88,11 @@ public class StudentPlayer extends PentagoPlayer {
             depth++; // increment depth
         }
 
-        System.out.println("OF Found Best Move in " + (System.currentTimeMillis() - startTime));
+        System.out.println("Found Best Move in " + (System.currentTimeMillis() - startTime));
         return bestResult.getBestMove();
     }
 
-    // class of an entry in my Transposition Table
+    // An entry in my Transposition Table
     final class TTEntry {
         private PentagoMove bestMove;
         private int score;
@@ -131,6 +126,8 @@ public class StudentPlayer extends PentagoPlayer {
     private TTEntry minimax(PentagoBoardState boardState, int depth, boolean maximizingPlayer, int alpha, int beta) {
         // search for boardState in Transposition Table instead of running minimax
         TTEntry tte = hashMap.get(MyTools.getBoardString(boardState));
+        // if the entry has lower depth, we shouldn't return it because we might get a
+        // better value by running minimax
         if (tte != null && tte.depth >= depth) {
             return tte;
         }
