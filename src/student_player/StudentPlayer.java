@@ -39,8 +39,8 @@ public class StudentPlayer extends PentagoPlayer {
         // set myPlayer, start time and end time
         myPlayer = boardState.getTurnPlayer();
         startTime = System.currentTimeMillis();
-        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + Server.FIRST_MOVE_TIMEOUT - 60
-                : System.currentTimeMillis() + Server.DEFAULT_TIMEOUT - 20;
+        endTime = (boardState.getTurnNumber() == 0) ? System.currentTimeMillis() + 30000 - 60
+                : System.currentTimeMillis() + 2000 - 20;
 
         // boolean flag to indicate that minimax was cutoff to avoid timeout
         cutoff = false;
